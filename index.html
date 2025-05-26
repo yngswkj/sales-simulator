@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SES売上シミュレーター | チーム編成と売上予測ツール</title>
+    <meta name="description" content="SESプロジェクトのチーム編成と売上を視覚的にシミュレーションできるツールです。">
+    <meta name="keywords" content="SES,売上,シミュレーション,チーム編成,プロジェクト管理">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-banner {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 15px;
+            margin: 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .info-banner h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-banner ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        .info-banner li {
+            margin-bottom: 5px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .add-member-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="range"] {
+            padding: 10px 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="range"] {
+            width: 150px;
+            height: 6px;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-label {
+            font-size: 12px;
+            opacity: 0.8;
+            min-width: 100px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle.annual {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle.annual .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .placement-area {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        .revenue-display {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+        }
+
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+
+        .stats-label {
+            opacity: 0.7;
+        }
+
+        .stats-value {
+            font-weight: 500;
+        }
+
+        .decrease-amount {
+            color: #ff6b6b;
+        }
+
+        .circle {
+            position: absolute;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            cursor: move;
+            transition: border-color 0.3s;
+        }
+
+        .circle:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .circle.dragging {
+            border-color: #667eea;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+        }
+
+        .member {
+            position: absolute;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            z-index: 5;
+            border: 2px solid transparent;
+            will-change: transform;
+        }
+
+        .member.editing {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .edit-hint {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .member:hover .edit-hint {
+            opacity: 0.7;
+        }
+
+        .member.proper {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .member.bp {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .member.in-circle {
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .member:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .member.dragging {
+            cursor: grabbing;
+            opacity: 0.9;
+            z-index: 100;
+            transform: scale(1.05);
+        }
+
+        .member-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .member-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .member-price {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .member-type {
+            font-size: 10px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: #ff4757;
+            color: white;
+            border: 2px solid #24243e;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ff3838;
+            transform: scale(1.1);
+        }
+
+        .member:hover .delete-btn {
+            display: flex;
+        }
+
+        #cancelEditBtn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+        }
+
+        #cancelEditBtn:hover {
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* モバイル専用のスタイル調整 */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .control-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .add-member-form {
+                flex-direction: column;
+            }
+
+            .stats-panel {
+                position: static;
+                margin: 20px 0 0 0;
+                min-width: auto;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            input[type="text"],
+            input[type="number"] {
+                width: 100%;
+            }
+
+            input[type="range"] {
+                width: 100%;
+            }
+
+            .range-label {
+                min-width: auto;
+                width: 100%;
+                text-align: center;
+            }
+
+            .info-banner {
+                margin: 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="info-banner">
+        <h3>📖 使い方ガイド</h3>
+        <ul>
+            <li><strong>メンバー追加：</strong> 名前と月単価を入力して「メンバー追加」をクリック</li>
+            <li><strong>タイプ切り替え：</strong> メンバーをクリックでプロパー↔BP切り替え</li>
+            <li><strong>編集：</strong> Shift+クリックでメンバー情報を編集</li>
+            <li><strong>移動：</strong> メンバーをドラッグして位置を調整</li>
+            <li><strong>削除：</strong> メンバーにカーソルを合わせて×ボタンをクリック</li>
+            <li><strong>売上計算：</strong> 円の中にいるメンバーの売上合計を自動計算</li>
+        </ul>
+    </div>
+
+    <div class="header">
+        <h1>SES売上シミュレーター</h1>
+        <p class="subtitle">チーム編成と売上予測を視覚的にシミュレーション</p>
+        <div class="controls">
+            <div class="add-member-form">
+                <input type="text" id="memberName" placeholder="メンバー名">
+                <input type="number" id="memberPrice" placeholder="月単価（万円）" min="0" step="10">
+                <button id="addUpdateBtn" onclick="addOrUpdateMember()">メンバー追加</button>
+                <button id="cancelEditBtn" onclick="cancelEdit()" style="display: none;">キャンセル</button>
+            </div>
+            <div class="toggle-container">
+                <span>月単位</span>
+                <div class="toggle" id="periodToggle" onclick="togglePeriod()">
+                    <div class="toggle-slider"></div>
+                </div>
+                <span>年単位</span>
+            </div>
+            <div class="control-group">
+                <label class="range-label">サークルサイズ</label>
+                <input type="range" id="circleSize" min="200" max="800" value="400" oninput="updateCircleSize()">
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="placement-area" id="placementArea">
+            <div class="stats-panel">
+                <div class="revenue-display" id="revenueDisplay">
+                    ¥0万/月
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">プロパー人数</span>
+                    <span class="stats-value" id="properCount">0人</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">BP人数</span>
+                    <span class="stats-value" id="bpCount">0人</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">減少見込み</span>
+                    <span class="stats-value decrease-amount" id="decreaseAmount">-¥0万</span>
+                </div>
+            </div>
+            <div class="circle" id="circle"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>SES Revenue Simulator v2.1 | Created for project management and revenue planning</p>
+    </footer>
+
+    <script>
+        let members = [];
+        let isAnnual = false;
+        let draggedMember = null;
+        let draggedCircle = false;
+        let dragOffset = { x: 0, y: 0 };
+        let circlePosition = { x: 50, y: 50 };
+        let circleSize = 400;
+        let editingMember = null;
+
+        const placementArea = document.getElementById('placementArea');
+        const circle = document.getElementById('circle');
+        const revenueDisplay = document.getElementById('revenueDisplay');
+        const properCount = document.getElementById('properCount');
+        const bpCount = document.getElementById('bpCount');
+        const decreaseAmount = document.getElementById('decreaseAmount');
+        const nameInput = document.getElementById('memberName');
+        const priceInput = document.getElementById('memberPrice');
+        const addUpdateBtn = document.getElementById('addUpdateBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+        // 初期化
+        function init() {
+            updateCirclePosition();
+            updateCircleSize();
+
+            circle.addEventListener('mousedown', startCircleDrag);
+            circle.addEventListener('touchstart', startCircleDrag, { passive: false });
+        }
+
+        function addOrUpdateMember() {
+            const name = nameInput.value.trim();
+            const price = parseFloat(priceInput.value);
+
+            if (!name || !price || price <= 0) {
+                alert('メンバー名と月単価を正しく入力してください');
+                return;
+            }
+
+            if (editingMember) {
+                // 編集モード
+                editingMember.name = name;
+                editingMember.monthlyPrice = price;
+
+                const memberEl = document.getElementById(`member-${editingMember.id}`);
+                if (memberEl) {
+                    updateMemberDisplay(memberEl, editingMember);
+                    memberEl.classList.remove('editing');
+                }
+
+                cancelEdit();
+            } else {
+                // 新規追加モード
+                const member = {
+                    id: Date.now(),
+                    name: name,
+                    monthlyPrice: price,
+                    type: 'proper',
+                    x: 50 + Math.random() * 200,
+                    y: 50 + Math.random() * 200,
+                    inCircle: false
+                };
+
+                members.push(member);
+                createMemberElement(member);
+
+                nameInput.value = '';
+                priceInput.value = '';
+            }
+
+            updateStats();
+        }
+
+        function editMember(member) {
+            editingMember = member;
+            nameInput.value = member.name;
+            priceInput.value = member.monthlyPrice;
+
+            addUpdateBtn.textContent = 'メンバー更新';
+            cancelEditBtn.style.display = 'inline-block';
+
+            // 編集中のメンバーをハイライト
+            members.forEach(m => {
+                const el = document.getElementById(`member-${m.id}`);
+                if (el) {
+                    el.classList.remove('editing');
+                }
+            });
+
+            const memberEl = document.getElementById(`member-${member.id}`);
+            if (memberEl) {
+                memberEl.classList.add('editing');
+            }
+
+            nameInput.focus();
+        }
+
+        function cancelEdit() {
+            editingMember = null;
+            nameInput.value = '';
+            priceInput.value = '';
+            addUpdateBtn.textContent = 'メンバー追加';
+            cancelEditBtn.style.display = 'none';
+
+            // 編集中のハイライトを削除
+            members.forEach(m => {
+                const el = document.getElementById(`member-${m.id}`);
+                if (el) {
+                    el.classList.remove('editing');
+                }
+            });
+        }
+
+        function createMemberElement(member) {
+            const memberEl = document.createElement('div');
+            memberEl.className = `member ${member.type}`;
+            memberEl.id = `member-${member.id}`;
+            memberEl.style.left = member.x + 'px';
+            memberEl.style.top = member.y + 'px';
+
+            updateMemberDisplay(memberEl, member);
+
+            memberEl.addEventListener('mousedown', startDrag);
+            memberEl.addEventListener('touchstart', startDrag, { passive: false });
+
+            placementArea.appendChild(memberEl);
+
+            checkCollisions(member);
+            updateMemberStatus(member);
+        }
+
+        function updateMemberDisplay(memberEl, member) {
+            const price = isAnnual ? member.monthlyPrice * 12 : member.monthlyPrice;
+            const unit = isAnnual ? '年' : '月';
+            const typeText = member.type === 'proper' ? 'プロパー' : 'BP';
+
+            memberEl.innerHTML = `
+                <div class="member-info">
+                    <div class="member-name">${member.name}</div>
+                    <div class="member-price">¥${price}万/${unit}</div>
+                    <div class="member-type">${typeText}</div>
+                </div>
+                <button class="delete-btn" onclick="deleteMember(${member.id})">×</button>
+                <div class="edit-hint">Shift+クリックで編集</div>
+            `;
+        }
+
+        function toggleMemberType(e, member, memberEl) {
+            if (!member || !memberEl) return;
+
+            // ドラッグ中はタイプ切り替えしない
+            if (draggedMember) return;
+
+            // Shiftキーが押されていたら編集モード
+            if (e.shiftKey) {
+                editMember(member);
+                return;
+            }
+
+            member.type = member.type === 'proper' ? 'bp' : 'proper';
+
+            // クラスを完全に再設定
+            memberEl.className = `member ${member.type}`;
+            if (member.inCircle) {
+                memberEl.classList.add('in-circle');
+            }
+            if (editingMember && editingMember.id === member.id) {
+                memberEl.classList.add('editing');
+            }
+
+            updateMemberDisplay(memberEl, member);
+            updateStats();
+        }
+
+        function deleteMember(id) {
+            // イベントの伝播を停止
+            event.stopPropagation();
+
+            members = members.filter(m => m.id !== id);
+            const memberEl = document.getElementById(`member-${id}`);
+            if (memberEl) {
+                memberEl.remove();
+            }
+            updateStats();
+        }
+
+        function startCircleDrag(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = circle.getBoundingClientRect();
+            const areaRect = placementArea.getBoundingClientRect();
+
+            draggedCircle = true;
+            circle.classList.add('dragging');
+
+            dragOffset.x = touch.clientX - rect.left - rect.width / 2;
+            dragOffset.y = touch.clientY - rect.top - rect.height / 2;
+
+            document.addEventListener('mousemove', dragCircle);
+            document.addEventListener('mouseup', endCircleDrag);
+            document.addEventListener('touchmove', dragCircle, { passive: false });
+            document.addEventListener('touchend', endCircleDrag);
+        }
+
+        function dragCircle(e) {
+            if (!draggedCircle) return;
+
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const areaRect = placementArea.getBoundingClientRect();
+
+            let newX = ((touch.clientX - areaRect.left - dragOffset.x) / areaRect.width) * 100;
+            let newY = ((touch.clientY - areaRect.top - dragOffset.y) / areaRect.height) * 100;
+
+            // 境界チェック
+            const circleRadius = (circleSize / 2 / areaRect.width) * 100;
+            newX = Math.max(circleRadius, Math.min(newX, 100 - circleRadius));
+            newY = Math.max(circleRadius, Math.min(newY, 100 - circleRadius));
+
+            circlePosition.x = newX;
+            circlePosition.y = newY;
+
+            updateCirclePosition();
+
+            // 全メンバーの状態を更新
+            members.forEach(member => {
+                updateMemberStatus(member);
+            });
+            updateStats();
+        }
+
+        function endCircleDrag() {
+            draggedCircle = false;
+            circle.classList.remove('dragging');
+
+            document.removeEventListener('mousemove', dragCircle);
+            document.removeEventListener('mouseup', endCircleDrag);
+            document.removeEventListener('touchmove', dragCircle);
+            document.removeEventListener('touchend', endCircleDrag);
+        }
+
+        function updateCirclePosition() {
+            circle.style.left = `${circlePosition.x}%`;
+            circle.style.top = `${circlePosition.y}%`;
+            circle.style.transform = 'translate(-50%, -50%)';
+        }
+
+        function updateCircleSize() {
+            circleSize = parseInt(document.getElementById('circleSize').value);
+            circle.style.width = circleSize + 'px';
+            circle.style.height = circleSize + 'px';
+
+            // 全メンバーの状態を更新
+            members.forEach(member => {
+                updateMemberStatus(member);
+            });
+            updateStats();
+        }
+
+        function startDrag(e) {
+            // 削除ボタンがクリックされた場合は何もしない
+            if (e.target.classList.contains('delete-btn')) return;
+
+            e.preventDefault();
+            const memberEl = e.currentTarget;
+            if (!memberEl || !memberEl.id) return;
+
+            const memberId = parseInt(memberEl.id.replace('member-', ''));
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+
+            // タッチイベントかマウスイベントかを判定
+            const touch = e.touches ? e.touches[0] : e;
+            const startX = touch.clientX;
+            const startY = touch.clientY;
+            let hasMoved = false;
+
+            const handleMove = (moveE) => {
+                const currentTouch = moveE.touches ? moveE.touches[0] : moveE;
+                const moveDistance = Math.sqrt(
+                    Math.pow(currentTouch.clientX - startX, 2) +
+                    Math.pow(currentTouch.clientY - startY, 2)
+                );
+
+                if (moveDistance > 5) {
+                    hasMoved = true;
+                    if (!draggedMember) {
+                        actualStartDrag(e, memberEl, member);
+                    }
+                    drag(moveE);
+                }
+            };
+
+            const handleEnd = (endE) => {
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchend', handleEnd);
+
+                if (!hasMoved) {
+                    // クリックとして処理（タイプ切り替え）
+                    toggleMemberType(e, member, memberEl);
+                } else if (draggedMember) {
+                    endDrag();
+                }
+            };
+
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('mouseup', handleEnd);
+            document.addEventListener('touchend', handleEnd);
+        }
+
+        function actualStartDrag(e, memberEl, member) {
+            if (draggedMember) return;
+
+            const touch = e.touches ? e.touches[0] : e;
+
+            draggedMember = member;
+            memberEl.classList.add('dragging');
+
+            const rect = memberEl.getBoundingClientRect();
+
+            dragOffset.x = touch.clientX - rect.left;
+            dragOffset.y = touch.clientY - rect.top;
+        }
+
+        function drag(e) {
+            if (!draggedMember) return;
+
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const areaRect = placementArea.getBoundingClientRect();
+            const memberEl = document.getElementById(`member-${draggedMember.id}`);
+
+            if (!memberEl) return;
+
+            // より直接的な位置計算
+            let newX = touch.clientX - areaRect.left - dragOffset.x;
+            let newY = touch.clientY - areaRect.top - dragOffset.y;
+
+            // 境界チェック
+            newX = Math.max(0, Math.min(newX, areaRect.width - memberEl.offsetWidth));
+            newY = Math.max(0, Math.min(newY, areaRect.height - memberEl.offsetHeight));
+
+            draggedMember.x = newX;
+            draggedMember.y = newY;
+
+            // transformを使用して高速化
+            memberEl.style.transform = `translate(${newX}px, ${newY}px)`;
+            memberEl.style.left = '0';
+            memberEl.style.top = '0';
+
+            updateMemberStatus(draggedMember);
+            updateStats();
+        }
+
+        function endDrag() {
+            if (!draggedMember) return;
+
+            const memberEl = document.getElementById(`member-${draggedMember.id}`);
+            if (memberEl) {
+                memberEl.classList.remove('dragging');
+
+                // transformから通常の位置指定に戻す
+                memberEl.style.transform = '';
+                memberEl.style.left = draggedMember.x + 'px';
+                memberEl.style.top = draggedMember.y + 'px';
+
+                checkCollisions(draggedMember);
+            }
+
+            updateStats();
+            draggedMember = null;
+        }
+
+        function checkCollisions(currentMember, depth = 0) {
+            // 無限ループ防止
+            if (depth > 10) return;
+
+            const memberEl = document.getElementById(`member-${currentMember.id}`);
+            if (!memberEl) return;
+
+            const currentRect = memberEl.getBoundingClientRect();
+            let hasCollision = false;
+
+            members.forEach(member => {
+                if (member.id === currentMember.id) return;
+
+                const otherEl = document.getElementById(`member-${member.id}`);
+                if (!otherEl) return;
+
+                const otherRect = otherEl.getBoundingClientRect();
+
+                if (isColliding(currentRect, otherRect)) {
+                    hasCollision = true;
+                    const dx = currentRect.left + currentRect.width / 2 - (otherRect.left + otherRect.width / 2);
+                    const dy = currentRect.top + currentRect.height / 2 - (otherRect.top + otherRect.height / 2);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance > 0) {
+                        const moveX = (dx / distance) * 15;
+                        const moveY = (dy / distance) * 15;
+
+                        currentMember.x += moveX;
+                        currentMember.y += moveY;
+
+                        // 境界チェック
+                        const areaRect = placementArea.getBoundingClientRect();
+                        currentMember.x = Math.max(0, Math.min(currentMember.x, areaRect.width - memberEl.offsetWidth));
+                        currentMember.y = Math.max(0, Math.min(currentMember.y, areaRect.height - memberEl.offsetHeight));
+
+                        memberEl.style.left = currentMember.x + 'px';
+                        memberEl.style.top = currentMember.y + 'px';
+                    }
+                }
+            });
+
+            // 衝突がある場合のみ再帰的にチェック
+            if (hasCollision) {
+                checkCollisions(currentMember, depth + 1);
+            }
+        }
+
+        function isColliding(rect1, rect2) {
+            return !(rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom);
+        }
+
+        function updateMemberStatus(member) {
+            const memberEl = document.getElementById(`member-${member.id}`);
+            const memberRect = memberEl.getBoundingClientRect();
+            const circleRect = circle.getBoundingClientRect();
+
+            const memberCenterX = memberRect.left + memberRect.width / 2;
+            const memberCenterY = memberRect.top + memberRect.height / 2;
+            const circleCenterX = circleRect.left + circleRect.width / 2;
+            const circleCenterY = circleRect.top + circleRect.height / 2;
+
+            const distance = Math.sqrt(
+                Math.pow(memberCenterX - circleCenterX, 2) +
+                Math.pow(memberCenterY - circleCenterY, 2)
+            );
+
+            const radius = circleRect.width / 2;
+            member.inCircle = distance < radius - memberRect.width / 2;
+
+            if (member.inCircle) {
+                memberEl.classList.add('in-circle');
+            } else {
+                memberEl.classList.remove('in-circle');
+            }
+        }
+
+        function updateStats() {
+            const inCircleMembers = members.filter(m => m.inCircle);
+            const outCircleMembers = members.filter(m => !m.inCircle);
+
+            // 売上計算
+            const monthlyRevenue = inCircleMembers.reduce((sum, m) => sum + m.monthlyPrice, 0);
+            const revenue = isAnnual ? monthlyRevenue * 12 : monthlyRevenue;
+            const unit = isAnnual ? '年' : '月';
+
+            // 減少金額計算
+            const monthlyDecrease = outCircleMembers.reduce((sum, m) => sum + m.monthlyPrice, 0);
+            const decrease = isAnnual ? monthlyDecrease * 12 : monthlyDecrease;
+
+            // 人数カウント
+            const properInCircle = inCircleMembers.filter(m => m.type === 'proper').length;
+            const bpInCircle = inCircleMembers.filter(m => m.type === 'bp').length;
+
+            // 表示更新
+            revenueDisplay.textContent = `¥${revenue.toLocaleString()}万/${unit}`;
+            properCount.textContent = `${properInCircle}人`;
+            bpCount.textContent = `${bpInCircle}人`;
+            decreaseAmount.textContent = `-¥${decrease.toLocaleString()}万`;
+        }
+
+        function togglePeriod() {
+            isAnnual = !isAnnual;
+            const toggle = document.getElementById('periodToggle');
+
+            if (isAnnual) {
+                toggle.classList.add('annual');
+            } else {
+                toggle.classList.remove('annual');
+            }
+
+            // 全メンバーの表示を更新
+            members.forEach(member => {
+                const memberEl = document.getElementById(`member-${member.id}`);
+                updateMemberDisplay(memberEl, member);
+            });
+
+            updateStats();
+        }
+
+        // ウィンドウリサイズ時の処理
+        window.addEventListener('resize', () => {
+            members.forEach(member => {
+                updateMemberStatus(member);
+            });
+            updateStats();
+        });
+
+        // 初期化
+        init();
+
+        // デモメンバーの追加
+        const demoMembers = [
+            { name: '田中太郎', price: 80, type: 'proper' },
+            { name: '佐藤花子', price: 75, type: 'bp' },
+            { name: '鈴木一郎', price: 90, type: 'proper' },
+            { name: '山田太一', price: 70, type: 'bp' }
+        ];
+
+        setTimeout(() => {
+            demoMembers.forEach((demo, index) => {
+                setTimeout(() => {
+                    const member = {
+                        id: Date.now() + index,
+                        name: demo.name,
+                        monthlyPrice: demo.price,
+                        type: demo.type,
+                        x: 100 + (index % 2) * 200,
+                        y: 100 + Math.floor(index / 2) * 100,
+                        inCircle: false
+                    };
+                    members.push(member);
+                    createMemberElement(member);
+                    updateStats();
+                }, index * 200);
+            });
+        }, 500);
+    </script>
+</body>
+
+</html>
