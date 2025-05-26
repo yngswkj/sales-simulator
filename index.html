@@ -7,6 +7,8 @@
     <title>売上シミュレーター | チーム編成と売上予測ツール</title>
     <meta name="description" content="プロジェクトのチーム編成と売上を視覚的にシミュレーションできるツールです。">
     <meta name="keywords" content="売上,シミュレーション,チーム編成,プロジェクト管理">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,7 +17,7 @@
         }
 
         body {
-            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+            font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: #fff;
             min-height: 100vh;
@@ -23,29 +25,95 @@
             flex-direction: column;
         }
 
-        .info-banner {
-            background: rgba(102, 126, 234, 0.1);
+        /* モーダル関連のスタイル */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal-content {
+            background: rgba(15, 12, 41, 0.95);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(102, 126, 234, 0.3);
-            padding: 15px;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
             margin: 20px;
-            border-radius: 12px;
-            font-size: 14px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        .modal-content h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .modal-content ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
             line-height: 1.6;
         }
 
-        .info-banner h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 16px;
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 100;
+            transition: all 0.3s ease;
         }
 
-        .info-banner ul {
-            margin-left: 20px;
-            margin-top: 5px;
-        }
-
-        .info-banner li {
-            margin-bottom: 5px;
+        .help-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
 
         .header {
@@ -407,6 +475,8 @@
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
+                padding: 10px;
+                gap: 10px;
             }
 
             .controls {
@@ -426,12 +496,34 @@
 
             .stats-panel {
                 position: static;
-                margin: 20px 0 0 0;
+                margin: 0 0 15px 0;
                 min-width: auto;
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .revenue-display {
+                font-size: 24px;
+                text-align: center;
+                margin-bottom: 12px;
+            }
+
+            .stats-item {
+                padding: 6px 0;
+                font-size: 13px;
+            }
+
+            .placement-area {
+                min-height: 400px;
+                border-radius: 12px;
             }
 
             .header h1 {
                 font-size: 24px;
+            }
+
+            .header .subtitle {
+                font-size: 13px;
             }
 
             input[type="text"],
@@ -449,26 +541,60 @@
                 text-align: center;
             }
 
-            .info-banner {
+            .modal-content {
                 margin: 10px;
-                font-size: 12px;
+                padding: 20px;
+                max-height: 90vh;
+            }
+
+            .help-button {
+                bottom: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .circle {
+                border-width: 2px;
+            }
+
+            .member {
+                padding: 10px 12px;
+            }
+
+            .member-name {
+                font-size: 13px;
+            }
+
+            .member-price {
+                font-size: 11px;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="info-banner">
-        <h3>📖 使い方ガイド</h3>
-        <ul>
-            <li><strong>メンバー追加：</strong> 名前と月単価を入力して「メンバー追加」をクリック</li>
-            <li><strong>タイプ切り替え：</strong> メンバーをクリックでプロパー↔BP切り替え</li>
-            <li><strong>編集：</strong> Shift+クリックでメンバー情報を編集</li>
-            <li><strong>移動：</strong> メンバーをドラッグして位置を調整</li>
-            <li><strong>削除：</strong> メンバーにカーソルを合わせて×ボタンをクリック</li>
-            <li><strong>売上計算：</strong> 円の中にいるメンバーの売上合計を自動計算</li>
-        </ul>
+    <!-- 使い方ガイドモーダル -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeHelpModal()">&times;</button>
+            <h3>📖 使い方ガイド</h3>
+            <ul>
+                <li><strong>メンバー追加：</strong> 名前と月単価を入力して「メンバー追加」をクリック</li>
+                <li><strong>タイプ切り替え：</strong> メンバーをクリックでプロパー↔BP切り替え</li>
+                <li><strong>編集：</strong> Shift+クリックでメンバー情報を編集</li>
+                <li><strong>移動：</strong> メンバーをドラッグして位置を調整</li>
+                <li><strong>削除：</strong> メンバーにカーソルを合わせて×ボタンをクリック</li>
+                <li><strong>売上計算：</strong> 円の中にいるメンバーの売上合計を自動計算</li>
+                <li><strong>サークル移動：</strong> 円をドラッグして位置を調整</li>
+                <li><strong>サークルサイズ：</strong> スライダーで円のサイズを変更</li>
+            </ul>
+        </div>
     </div>
+
+    <!-- ヘルプボタン -->
+    <button class="help-button" onclick="showHelpModal()" title="使い方ガイド">?</button>
 
     <div class="header">
         <h1>売上シミュレーター</h1>
@@ -495,24 +621,26 @@
     </div>
 
     <div class="main-container">
-        <div class="placement-area" id="placementArea">
-            <div class="stats-panel">
-                <div class="revenue-display" id="revenueDisplay">
-                    ¥0万/月
-                </div>
-                <div class="stats-item">
-                    <span class="stats-label">プロパー人数</span>
-                    <span class="stats-value" id="properCount">0人</span>
-                </div>
-                <div class="stats-item">
-                    <span class="stats-label">BP人数</span>
-                    <span class="stats-value" id="bpCount">0人</span>
-                </div>
-                <div class="stats-item">
-                    <span class="stats-label">減少見込み</span>
-                    <span class="stats-value decrease-amount" id="decreaseAmount">-¥0万</span>
-                </div>
+        <!-- モバイルでは統計パネルを上部に表示 -->
+        <div class="stats-panel">
+            <div class="revenue-display" id="revenueDisplay">
+                ¥0万/月
             </div>
+            <div class="stats-item">
+                <span class="stats-label">プロパー人数</span>
+                <span class="stats-value" id="properCount">0人</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-label">BP人数</span>
+                <span class="stats-value" id="bpCount">0人</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-label">減少見込み</span>
+                <span class="stats-value decrease-amount" id="decreaseAmount">-¥0万</span>
+            </div>
+        </div>
+
+        <div class="placement-area" id="placementArea">
             <div class="circle" id="circle"></div>
         </div>
     </div>
@@ -542,10 +670,63 @@
         const addUpdateBtn = document.getElementById('addUpdateBtn');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
 
+        // モーダル関連の関数
+        function showHelpModal() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        // モーダルの外側クリックで閉じる
+        document.getElementById('helpModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeHelpModal();
+            }
+        });
+
+        // ページロード時にモーダル表示（初回のみ）
+        window.addEventListener('load', function () {
+            const hasSeenGuide = localStorage.getItem('hasSeenGuide');
+            if (!hasSeenGuide) {
+                setTimeout(() => {
+                    showHelpModal();
+                    localStorage.setItem('hasSeenGuide', 'true');
+                }, 1000);
+            }
+        });
+
+        // デスクトップでは統計パネルをplacementArea内に配置
+        function adjustStatsPanel() {
+            const statsPanel = document.querySelector('.stats-panel');
+            const mainContainer = document.querySelector('.main-container');
+            const placementArea = document.getElementById('placementArea');
+
+            if (window.innerWidth > 768) {
+                // デスクトップ: placement-area内に配置
+                placementArea.appendChild(statsPanel);
+                statsPanel.style.position = 'absolute';
+                statsPanel.style.top = '20px';
+                statsPanel.style.right = '20px';
+                statsPanel.style.margin = '0';
+            } else {
+                // モバイル: main-container内の最初の子要素として配置
+                if (placementArea.contains(statsPanel)) {
+                    mainContainer.insertBefore(statsPanel, placementArea);
+                }
+                statsPanel.style.position = 'static';
+                statsPanel.style.top = 'auto';
+                statsPanel.style.right = 'auto';
+                statsPanel.style.margin = '0 0 15px 0';
+            }
+        }
+
         // 初期化
         function init() {
             updateCirclePosition();
             updateCircleSize();
+            adjustStatsPanel();
 
             circle.addEventListener('mousedown', startCircleDrag);
             circle.addEventListener('touchstart', startCircleDrag, { passive: false });
@@ -1024,6 +1205,7 @@
 
         // ウィンドウリサイズ時の処理
         window.addEventListener('resize', () => {
+            adjustStatsPanel();
             members.forEach(member => {
                 updateMemberStatus(member);
             });
